@@ -9,7 +9,8 @@ kernel_matrix <- function(x_eval, x_data, A){
     H_half <- matrix(c(A[1],A[3],A[3],A[2]),nrow=2)
 
     # Gets H^-1 matrix
-    H_inv <- solve(H_half) %*% solve(H_half)
+    H_half_inv <- solve(H_half)
+    H_inv <- H_half_inv %*% H_half_inv
 
     # Let uij = xi - xj; build table of values where each row is the evaluation point
     # Sign flip is fine since we square it
@@ -24,7 +25,7 @@ kernel_matrix <- function(x_eval, x_data, A){
     quad <- H_inv[1, 1] * u1^2 + 2 * H_inv[1, 2] * u1 * u2 + H_inv[2, 2] * u2^2
 
     # Final equation
-    exp(-0.5 * prod)
+    exp(-0.5 * quad)
 }
 
 # Create Smoother matrix S
@@ -52,7 +53,7 @@ theta_from_h <- function(h11, h22, h12 = 0){
 
 # Iterated Data Sharpening function
 lc_ids <- function(S, y, M){
-    # n x (M + 1) matrix: column M + 1 is hte fit at the data points after M iterations
+    # n x (M + 1) matrix: column M + 1 is the fit at the data points after M iterations
 
     g_hat_sharp <- matrix(NA, nrow = length(y), ncol = M + 1)
 
@@ -61,10 +62,10 @@ lc_ids <- function(S, y, M){
 
     for(m in 0:M){
         Py <- Py - S %*% Py  # (I - S)Py  <=> (I - S)^(m+1) y = y - fit_m
-        fits[, m+1] <- y - Py  # fit_m = [I - (I - S)^(m+1)] y = F_m y = y_hat
+        g_hat_sharp[, m+1] <- y - Py  # fit_m = [I - (I - S)^(m+1)] y = F_m y = y_hat
     }
 
-    fits
+    g_hat_sharp
 }
 
 # Sharpened data
@@ -89,4 +90,38 @@ predict_grid <- function(theta, M, x_data, y, x_grid){
     ys <- sharpen_y(S, y, M)
     Kg <- kernel_matrix(x_grid, x_data, A) # rows = grid points, col = data points
     drop(Kg %*% ys) / rowSums (Kg) # g_hat at iteration M
+}
+
+# Objective function LOOCV
+loocv <- function(theta, M, x_data, y){
+    S <- S_lc(kernel_matrix(x_data, x_data, gen_A(theta)))
+    n <- length(y)
+    P <- diag(n) # P = (I-S)^(M+1)
+
+    for(m in 0:M){
+        P <- P - S %*% P
+    } 
+
+    F_M <- diag(n) - P # FM = I-P
+    fit <- F_M %*% y # yhat = FM*y
+    denom <- diag(P) # Pii
+
+    if(any(!is.finite(fit)) || any(denom <= 1e-8)){
+        return(Inf) # if bandwidth is too tiny
+    }
+    mean(((y - fit) / denom)^2)
+}
+
+# Simulation helper function
+g1 <- function(x1, x2){
+    5 * (x1 - 0.4)^2 + 3 * x1 * x2^2
+}
+
+g2 <- function(x1, x2){
+    sin(pi * x1) * sin(2 * pi * x2)
+}
+
+gen_data <- function(n, g, sigma){
+    x_data <- cbind(runif(n), runif(n))
+    list(x_data = x_data, y =g(x_data[, 1], x_data[, 2]) + rnorm(n, 0, sigma))
 }
