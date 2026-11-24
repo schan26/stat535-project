@@ -4,7 +4,7 @@
 library(parallel)
 source("core.R")
 source("grad.R")
-source("gd.R")
+source("grad_desc.R")
 
 # Set up
 seed <- 143
@@ -65,7 +65,7 @@ run_one <- function(method, th0, M, X, y){
     fit <- tryCatch(switch(method,
     NM = optim(th0, cnt$f, method = "Nelder-Mead"), # LOOCV only 
     BFGS = optim(th0, cnt$f, cnt$g, method = "BFGS", control = list(maxit = 500)), # 500 to match other methods' cap/stop criteria
-    GD = gd_backtrack(th0, cnt$f, cnt$g, alpha0 = 10)), # alpha0 starting value for decrease
+    GD = grad_desc(th0, cnt$f, cnt$g)), 
     error = function(e) NULL)
     
     # NULL fit means optimizer crashed/failed or at Inf (bandwidth too tiny)
@@ -158,7 +158,7 @@ if (n_cores > 1) {
   wd <- getwd()
   clusterExport(cl, c("wd", "fun_list", "M_vals", "methods", "n_start", "Xg", "is_bd",
                       "est_error", "make_counter", "run_one"))
-  clusterEvalQ(cl, { setwd(wd); source("core.R"); source("grad.R"); source("gd.R"); NULL })
+  clusterEvalQ(cl, { setwd(wd); source("core.R"); source("grad.R"); source("grad_desc.R"); NULL })
   # parLapplyLB hands out jobs one at a time as cores free up (parLapply would split them up front)
   out <- tryCatch(parLapplyLB(cl, jobs, run_job), finally = stopCluster(cl))
 } else {
