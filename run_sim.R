@@ -74,7 +74,7 @@ run_one <- function(method, th0, M, X, y){
     }
     
     # Want to see if the run stopped because of the optimizer's own stopping criteria and not the iteration max 500
-    # loocv is called again here so check isn't counted in count
+    # loocv_grad is called again here so check isn't counted in count
     # ||gradient of f(theta hat)|| < 10^-6 for gradient descent; BFGS and NM (0 = converged by own rule, 1 = hit iteration cap, 10 = NM only (simplex collapsed))
     converged <- if(method == "GD") sqrt(sum(loocv_grad(fit$par, M, X, y)^2)) < 1e-6 
         else fit$convergence == 0 # Proper stop/convergence
