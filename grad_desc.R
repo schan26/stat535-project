@@ -4,12 +4,13 @@ grad_desc <- function(theta, f, g, alpha0 = 1, rho = 0.5, tau = 1e-4,
     fx <- f(theta); num_f <- 1; num_g <- 0; path <- fx
 
     for (k in 1:maxit) {
+        grad <- g(theta); num_g <- num_g + 1
         # gradient ~ 0: stop (reached minimum)
         if (sqrt(sum(grad^2)) < tol) 
             break 
 
         # steepest line search (negative gradient)
-        s <- -g(theta); num_g <- num_g + 1
+        s <- -g(theta); 
 
         # backtracking line search of step size
         alpha <- alpha0                    
