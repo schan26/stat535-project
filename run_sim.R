@@ -66,7 +66,7 @@ run_one <- function(method, th0, M, X, y){
     NM = optim(th0, cnt$f, method = "Nelder-Mead"), # LOOCV only 
     BFGS = optim(th0, cnt$f, cnt$g, method = "BFGS", control = list(maxit = 500)), # 500 to match other methods' cap/stop criteria
     GD = grad_desc(th0, cnt$f, cnt$g)), 
-    error = function(e) NULL)
+    error = function(e) { message(method, " failed: ", conditionMessage(e)); NULL })
     
     # NULL fit means optimizer crashed/failed or at Inf (bandwidth too tiny)
     if(is.null(fit) || !is.finite(fit$value)){
@@ -154,7 +154,7 @@ cat("Running", length(jobs), "jobs (", length(tasks), "datasets x", length(M_val
 
 # NEED THIS FOR IT TO RUN PARALLEL
 if (n_cores > 1) {
-  cl <- makeCluster(n_cores)                          # separate R sessions; works on macOS and Windows
+  cl <- makeCluster(n_cores, outfile = "")                          # separate R sessions; works on macOS and Windows
   wd <- getwd()
   clusterExport(cl, c("wd", "fun_list", "M_vals", "methods", "n_start", "Xg", "is_bd",
                       "est_error", "make_counter", "run_one"))
