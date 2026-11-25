@@ -4,7 +4,7 @@
 # Output: fig1_landscape.pdf, table2.csv
 source("core.R")      # loocv, gen_A, theta_from_h
 source("grad.R")      # loocv_grad
-source("gd.R")        # gd_backtrack
+source("grad_desc.R")        # gd_backtrack
 load("sim_results.RData")   # res, paths, tasks
 
 # ---------- settings ----------
