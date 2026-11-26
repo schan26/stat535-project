@@ -10,7 +10,7 @@ grad_desc <- function(theta, f, g, alpha0 = 1, rho = 0.5, tau = 1e-4,
             break 
 
         # steepest line search (negative gradient)
-        s <- -g(theta); 
+        s <- -grad; 
 
         # backtracking line search of step size
         alpha <- alpha0                    
